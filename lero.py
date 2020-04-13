@@ -1,5 +1,7 @@
 import numpy as np
 import cvxpy as cp
+import json
+import os
 
 HEALTH_RANGE = 5
 ARROWS_RANGE = 4
@@ -36,6 +38,9 @@ class State:
 
     def as_tuple(self):
         return (self.health, self.arrows, self.stamina)
+
+    def as_list(self):
+        return [self.health, self.arrows, self.stamina]
 
     def get_hash(self):
         return (self.health * (ARROWS_RANGE * STAMINA_RANGE) +
@@ -154,6 +159,10 @@ class Lero:
         self.r = self.get_r()
         self.a = self.get_a()
         self.alpha = self.get_alpha()
+        self.x = self.quest()
+        self.policy = []
+        self.solution_dict = {}
+        self.objective = 0.0
     
     def get_dimensions(self):
         dim = 0
@@ -213,15 +222,51 @@ class Lero:
         problem = cp.Problem(objective, constraints)
 
         solution = problem.solve()
-        print(solution)
-        print(type(x))
+        self.objective = solution
+        arr = list(x.value)
+        l = [ float(val) for val in arr]
+        return l
+
+    def get_policy(self):
+        idx = 0
+        for i in range(NUM_STATES):
+            s = State.from_hash(i)
+            actions = s.actions()
+            temp = np.NINF
+            best_action = -1
+            for action in actions:
+                if(self.x[idx] >= temp):
+                    temp = self.x[idx]
+                    best_action = action 
+                idx += 1
+            local = []
+            local.append(s.as_list())
+            local.append(ACTION_NAMES[best_action])
+            self.policy.append(local)
+
+    def generate_dict(self):
+        self.solution_dict["a"] = self.a.tolist()
+        r = [float(val) for val in np.transpose(self.r)]
+        self.solution_dict["r"] = r
+        alp = [float(val) for val in self.alpha]
+        self.solution_dict["alpha"] = alp
+        self.solution_dict["x"] = self.x
+        self.solution_dict["policy"] = self.policy
+        self.solution_dict["objective"] = float(self.objective)
+        
+    def write_output(self):
+        path = "outputs/output.json"
+        json_object = json.dumps(self.solution_dict, indent=4)
+        with open(path, 'w+') as f:
+          f.write(json_object)
+
+    def execute(self):
+        os.makedirs('outputs', exist_ok=True)
+        self.quest()
+        self.get_policy()
+        self.generate_dict()
+        self.write_output()    
+
 
 lero = Lero()
-lero.quest()
-
-
-
-
-
-    
-
+lero.execute()
