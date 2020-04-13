@@ -232,13 +232,9 @@ class Lero:
         for i in range(NUM_STATES):
             s = State.from_hash(i)
             actions = s.actions()
-            temp = np.NINF
-            best_action = -1
-            for action in actions:
-                if(self.x[idx] >= temp):
-                    temp = self.x[idx]
-                    best_action = action 
-                idx += 1
+            act_idx = np.argmax(self.x[idx : idx+len(actions)])
+            idx += len(actions)
+            best_action = actions[act_idx]
             local = []
             local.append(s.as_list())
             local.append(ACTION_NAMES[best_action])
