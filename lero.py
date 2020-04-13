@@ -213,11 +213,35 @@ class Lero:
         problem = cp.Problem(objective, constraints)
 
         solution = problem.solve()
-        print(solution)
-        print(type(x))
+        return solution, x, self.r, self.a, self.alpha, self.make_policy(x)
+
+    def make_policy(self, x):
+        policy = []
+        
+        idx = 0
+        for i in range(NUM_STATES):
+            s = State.from_hash(i)
+            actions = s.actions()
+
+            act_idx = np.argmax(x.value[idx:idx+len(actions)][0])
+            action = actions[act_idx]
+            idx += len(actions)
+            policy.append([
+                list(s.as_tuple()),
+                ACTION_NAMES[action],
+            ])
+        return policy
+
+
 
 lero = Lero()
-lero.quest()
+obj, x, r, a, alpha, policy = lero.quest()
+print(obj)
+print(x.value)
+print(r)
+print(a)
+print(alpha)
+print(policy)
 
 
 
